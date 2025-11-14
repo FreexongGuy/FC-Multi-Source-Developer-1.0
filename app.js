@@ -1,20 +1,3 @@
-// 🔹 Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyApJyJrg_dLkBdA08heBNlfIZObSY9LqXk",
-  authDomain: "fc-multi-source.firebaseapp.com",
-  projectId: "fc-multi-source",
-  storageBucket: "fc-multi-source.firebasestorage.app",
-  messagingSenderId: "602428529893",
-  appId: "1:602428529893:web:5da6267bead4539113080c"
-};
-
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-// Generate random username
-const username = "User-" + Math.random().toString(36).substring(7);
-
 // Elements
 const messagesDiv = document.getElementById("messages");
 const input = document.getElementById("messageInput");
@@ -26,60 +9,90 @@ const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 const darkModeToggle = document.getElementById("darkModeToggle");
 const notificationsToggle = document.getElementById("notificationsToggle");
 
-// Timestamp of last clear
+const username = window.chatUsername || "UnknownUser";
 let clearTimestamp = null;
-
-// Track last message count for notifications
 let lastMessageCount = 0;
 
-// Format timestamps like "5:42 PM"
+// Load messages
+let messages = JSON.parse(localStorage.getItem("chatMessages") || "[]");
+
+// Format time
 function formatTime(date) {
-  if (!date) return "";
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-// 🔹 Send text message
-async function sendMessage() {
+// Render messages
+function renderMessages() {
+  messagesDiv.innerHTML = "";
+  const notificationsEnabled = localStorage.getItem("notifications") !== "off";
+
+  messages.forEach(msg => {
+    if (clearTimestamp && new Date(msg.time) <= clearTimestamp) return;
+    const div = document.createElement("div");
+    div.classList.add("message");
+    div.innerHTML = `<strong>${msg.user}</strong>: ${msg.text}<div class="timestamp">${formatTime(new Date(msg.time))}</div>`;
+    messagesDiv.appendChild(div);
+  });
+
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+  if (notificationsEnabled && messages.length > lastMessageCount) {
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg.user !== username && Notification.permission === "granted") {
+      new Notification(`New message from ${lastMsg.user}`, { body: lastMsg.text });
+    }
+  }
+
+  lastMessageCount = messages.length;
+}
+
+// Send message
+function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
-  try {
-    await db.collection("messages").add({
-      username,
-      text,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    });
-    input.value = "";
-  } catch (err) {
-    console.error("Error sending message:", err);
-    alert("Failed to send message. Check console.");
-  }
+  const msg = { user: username, text, time: new Date().toISOString() };
+  messages.push(msg);
+  localStorage.setItem("chatMessages", JSON.stringify(messages));
+  renderMessages();
+  input.value = "";
 }
 
-// Send message on button click
+// Clear chat
+function clearChat() {
+  clearTimestamp = new Date();
+  renderMessages();
+}
+
+// Event listeners
 sendBtn.addEventListener("click", sendMessage);
+input.addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
+clearBtn.addEventListener("click", clearChat);
 
-// Send message on Enter key press
-input.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    sendMessage();
+// Settings modal
+settingsBtn.addEventListener("click", () => { settingsModal.style.display = "flex"; });
+closeSettingsBtn.addEventListener("click", () => { settingsModal.style.display = "none"; });
+
+// Dark mode toggle
+darkModeToggle.addEventListener("change", () => {
+  if (darkModeToggle.checked) {
+    document.body.classList.remove("light-mode");
+    localStorage.setItem("darkMode", "on");
+  } else {
+    document.body.classList.add("light-mode");
+    localStorage.setItem("darkMode", "off");
   }
 });
 
-// Clear chat for this client only
-clearBtn.addEventListener("click", () => {
-  messagesDiv.innerHTML = "";
-  clearTimestamp = new Date(); // all older messages ignored
+// Notifications toggle
+notificationsToggle.addEventListener("change", () => {
+  localStorage.setItem("notifications", notificationsToggle.checked ? "on" : "off");
 });
 
-// 🔹 Request notification permission on load
+// Request notifications & load settings
 window.addEventListener("load", () => {
-  if ("Notification" in window && Notification.permission !== "granted") {
-    Notification.requestPermission();
-  }
+  if ("Notification" in window && Notification.permission !== "granted") Notification.requestPermission();
 
-  // Load saved settings
   const darkMode = localStorage.getItem("darkMode") || "on";
   const notifications = localStorage.getItem("notifications") || "on";
 
@@ -92,68 +105,6 @@ window.addEventListener("load", () => {
   }
 
   notificationsToggle.checked = notifications === "on";
-});
 
-// 🔹 Display messages in real-time
-db.collection("messages")
-  .orderBy("createdAt", "asc")
-  .onSnapshot((snapshot) => {
-    messagesDiv.innerHTML = "";
-    const notificationsEnabled = localStorage.getItem("notifications") !== "off";
-    const newMessageCount = snapshot.size;
-
-    snapshot.forEach((doc) => {
-      const msg = doc.data();
-      const msgTime = msg.createdAt ? msg.createdAt.toDate() : new Date();
-
-      // Skip messages older than last clear
-      if (clearTimestamp && msgTime <= clearTimestamp) return;
-
-      const time = msg.createdAt ? formatTime(msg.createdAt.toDate()) : "";
-      const div = document.createElement("div");
-      div.classList.add("message");
-      div.innerHTML = `<strong>${msg.username}</strong>: ${msg.text}<div class="timestamp">${time}</div>`;
-      messagesDiv.appendChild(div);
-    });
-
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-    // Browser notifications for new messages from others
-    if (notificationsEnabled && newMessageCount > lastMessageCount) {
-      const lastMsg = snapshot.docs[snapshot.docs.length - 1].data();
-      if (lastMsg.username !== username && Notification.permission === "granted") {
-        new Notification(`New message from ${lastMsg.username}`, {
-          body: lastMsg.text,
-          icon: "", // Optional: URL to small icon
-        });
-      }
-    }
-
-    lastMessageCount = newMessageCount;
-  });
-
-// 🔹 Settings modal open/close
-settingsBtn.addEventListener("click", () => {
-  settingsModal.style.display = "flex";
-});
-
-closeSettingsBtn.addEventListener("click", () => {
-  settingsModal.style.display = "none";
-});
-
-// 🔹 Dark mode toggle
-darkModeToggle.addEventListener("change", () => {
-  if (darkModeToggle.checked) {
-    document.body.classList.remove("light-mode");
-    localStorage.setItem("darkMode", "on");
-  } else {
-    document.body.classList.add("light-mode");
-    localStorage.setItem("darkMode", "off");
-  }
-});
-
-// 🔹 Notifications toggle
-notificationsToggle.addEventListener("change", () => {
-  const enabled = notificationsToggle.checked;
-  localStorage.setItem("notifications", enabled ? "on" : "off");
+  renderMessages();
 });

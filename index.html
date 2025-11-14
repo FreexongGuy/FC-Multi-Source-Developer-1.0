@@ -9,20 +9,9 @@
 <body>
   <div class="chat-container">
     <h2>🌍 Global Chat</h2>
-
     <div id="messages"></div>
-
     <div class="input-area">
-      <input
-        id="messageInput"
-        type="text"
-        placeholder="Type a message..."
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        spellcheck="false"
-        autofocus
-      />
+      <input id="messageInput" type="text" placeholder="Type a message..." autocomplete="off" />
       <button id="sendBtn">Send</button>
       <button id="clearBtn">Clear Chat</button>
       <button id="settingsBtn">⚙️ Settings</button>
@@ -33,24 +22,19 @@
   <div id="settingsModal" class="modal">
     <div class="modal-content">
       <h3>Settings</h3>
-      <label>
-        <input type="checkbox" id="darkModeToggle" />
-        Dark Mode
-      </label>
-      <br/>
-      <label>
-        <input type="checkbox" id="notificationsToggle" />
-        Notifications
-      </label>
-      <br/><br/>
+      <label><input type="checkbox" id="darkModeToggle" /> Dark Mode</label><br/>
+      <label><input type="checkbox" id="notificationsToggle" /> Notifications</label><br/><br/>
       <button id="closeSettingsBtn">Close</button>
     </div>
   </div>
 
-  <!-- Firebase SDKs (compat version) -->
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
+  <!-- Set username before loading chat -->
+  <script type="module">
+    const username = localStorage.getItem("chatUsername");
+    if (!username) window.location.href = "auth/login.html";
+    window.chatUsername = username;
+  </script>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
