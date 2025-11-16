@@ -1,40 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🌍 Global Chat</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FC Multi-Source Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+    }
+
+    #chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      border-bottom: 1px solid #444;
+    }
+
+    .chat-message {
+      padding: 5px 10px;
+      margin: 5px 0;
+      background-color: #333;
+      border-radius: 5px;
+      word-wrap: break-word;
+    }
+
+    .chat-message .name {
+      font-weight: bold;
+      color: #00ffff;
+      margin-right: 5px;
+    }
+
+    #input-container, #report-section {
+      display: flex;
+      padding: 10px;
+      gap: 10px;
+    }
+
+    #message-input, #report-text {
+      flex: 1;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      outline: none;
+    }
+
+    #send-btn, #report-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    #send-btn:hover, #report-btn:hover {
+      background-color: #0056b3;
+    }
+
+    #report-section {
+      flex-direction: column;
+      border-top: 1px solid #444;
+      padding-top: 15px;
+    }
+
+    #report-section textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    #report-status {
+      margin-top: 5px;
+      font-style: italic;
+    }
+  </style>
 </head>
 <body>
-  <div class="chat-container">
-    <h2>🌍 Global Chat</h2>
-    <div id="messages"></div>
-    <div class="input-area">
-      <input id="messageInput" type="text" placeholder="Type a message..." autocomplete="off" />
-      <button id="sendBtn">Send</button>
-      <button id="clearBtn">Clear Chat</button>
-      <button id="settingsBtn">⚙️ Settings</button>
-    </div>
+  <div id="chat-container"></div>
+
+  <div id="input-container">
+    <input type="text" id="message-input" placeholder="Type a message">
+    <button id="send-btn">Send</button>
   </div>
 
-  <!-- Settings Modal -->
-  <div id="settingsModal" class="modal">
-    <div class="modal-content">
-      <h3>Settings</h3>
-      <label><input type="checkbox" id="darkModeToggle" /> Dark Mode</label><br/>
-      <label><input type="checkbox" id="notificationsToggle" /> Notifications</label><br/><br/>
-      <button id="closeSettingsBtn">Close</button>
-    </div>
+  <div id="report-section">
+    <h3>Report a message/user</h3>
+    <textarea id="report-text" placeholder="Describe your issue"></textarea>
+    <button id="report-btn">Submit Report</button>
+    <p id="report-status"></p>
   </div>
 
-  <!-- Set username before loading chat -->
-  <script type="module">
-    const username = localStorage.getItem("chatUsername");
-    if (!username) window.location.href = "auth/login.html";
-    window.chatUsername = username;
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- ✅ Correct EmailJS browser SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser/dist/email.min.js"></script>
+  <script>
+    emailjs.init("8ccRt_DLVUfYDESK7"); // Public key
   </script>
 
-  <script type="module" src="app.js"></script>
+  <!-- Main app script -->
+  <script src="app.js"></script>
 </body>
 </html>
