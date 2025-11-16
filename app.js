@@ -1,110 +1,127 @@
-// Elements
-const messagesDiv = document.getElementById("messages");
-const input = document.getElementById("messageInput");
-const sendBtn = document.getElementById("sendBtn");
-const clearBtn = document.getElementById("clearBtn");
-const settingsBtn = document.getElementById("settingsBtn");
-const settingsModal = document.getElementById("settingsModal");
-const closeSettingsBtn = document.getElementById("closeSettingsBtn");
-const darkModeToggle = document.getElementById("darkModeToggle");
-const notificationsToggle = document.getElementById("notificationsToggle");
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyApJyJrg_dLkBdA08heBNlfIZObSY9LqXk",
+  authDomain: "fc-multi-source.firebaseapp.com",
+  databaseURL: "https://fc-multi-source-default-rtdb.firebaseio.com",
+  projectId: "fc-multi-source",
+  storageBucket: "fc-multi-source.firebasestorage.app",
+  messagingSenderId: "602428529893",
+  appId: "1:602428529893:web:5da6267bead4539113080c"
+};
 
-const username = window.chatUsername || "UnknownUser";
-let clearTimestamp = null;
-let lastMessageCount = 0;
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
 
-// Load messages
-let messages = JSON.parse(localStorage.getItem("chatMessages") || "[]");
+// References
+const dbRef = firebase.database().ref('messages');
+const chatContainer = document.getElementById('chat-container');
+const messageInput = document.getElementById('message-input');
+const sendBtn = document.getElementById('send-btn');
+const reportText = document.getElementById('report-text');
+const reportBtn = document.getElementById('report-btn');
+const reportStatus = document.getElementById('report-status');
 
-// Format time
-function formatTime(date) {
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+// Get username from login
+const username = localStorage.getItem('chatUsername') || "Anonymous";
+
+// Display messages
+function displayMessages(messages) {
+    chatContainer.innerHTML = '';
+    Object.keys(messages).forEach(key => {
+        const messageData = messages[key];
+        const textValue = messageData.text;
+        const nameValue = messageData.name || "Anonymous";
+
+        if (textValue) {
+            const msgElement = document.createElement('div');
+            msgElement.classList.add('chat-message');
+
+            const nameSpan = document.createElement('span');
+            nameSpan.classList.add('name');
+            nameSpan.textContent = nameValue + ": ";
+            msgElement.appendChild(nameSpan);
+
+            const textSpan = document.createElement('span');
+            textSpan.textContent = textValue;
+            msgElement.appendChild(textSpan);
+
+            chatContainer.appendChild(msgElement);
+        }
+    });
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Render messages
-function renderMessages() {
-  messagesDiv.innerHTML = "";
-  const notificationsEnabled = localStorage.getItem("notifications") !== "off";
+// Real-time listener for last 50 messages
+dbRef.limitToLast(50).on('value', snapshot => {
+    const data = snapshot.val();
+    if (data) displayMessages(data);
+});
 
-  messages.forEach(msg => {
-    if (clearTimestamp && new Date(msg.time) <= clearTimestamp) return;
-    const div = document.createElement("div");
-    div.classList.add("message");
-    div.innerHTML = `<strong>${msg.user}</strong>: ${msg.text}<div class="timestamp">${formatTime(new Date(msg.time))}</div>`;
-    messagesDiv.appendChild(div);
-  });
-
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-  if (notificationsEnabled && messages.length > lastMessageCount) {
-    const lastMsg = messages[messages.length - 1];
-    if (lastMsg.user !== username && Notification.permission === "granted") {
-      new Notification(`New message from ${lastMsg.user}`, { body: lastMsg.text });
+// Send chat message
+sendBtn.addEventListener('click', () => {
+    const text = messageInput.value.trim();
+    if (text !== '') {
+        dbRef.push().set({
+            name: username,
+            text: text,
+            timestamp: Date.now()
+        }).then(() => {
+            messageInput.value = '';
+        }).catch(err => console.error("Error sending message:", err));
     }
-  }
-
-  lastMessageCount = messages.length;
-}
-
-// Send message
-function sendMessage() {
-  const text = input.value.trim();
-  if (!text) return;
-
-  const msg = { user: username, text, time: new Date().toISOString() };
-  messages.push(msg);
-  localStorage.setItem("chatMessages", JSON.stringify(messages));
-  renderMessages();
-  input.value = "";
-}
-
-// Clear chat
-function clearChat() {
-  clearTimestamp = new Date();
-  renderMessages();
-}
-
-// Event listeners
-sendBtn.addEventListener("click", sendMessage);
-input.addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
-clearBtn.addEventListener("click", clearChat);
-
-// Settings modal
-settingsBtn.addEventListener("click", () => { settingsModal.style.display = "flex"; });
-closeSettingsBtn.addEventListener("click", () => { settingsModal.style.display = "none"; });
-
-// Dark mode toggle
-darkModeToggle.addEventListener("change", () => {
-  if (darkModeToggle.checked) {
-    document.body.classList.remove("light-mode");
-    localStorage.setItem("darkMode", "on");
-  } else {
-    document.body.classList.add("light-mode");
-    localStorage.setItem("darkMode", "off");
-  }
 });
 
-// Notifications toggle
-notificationsToggle.addEventListener("change", () => {
-  localStorage.setItem("notifications", notificationsToggle.checked ? "on" : "off");
+messageInput.addEventListener('keypress', e => {
+    if (e.key === 'Enter') sendBtn.click();
 });
 
-// Request notifications & load settings
-window.addEventListener("load", () => {
-  if ("Notification" in window && Notification.permission !== "granted") Notification.requestPermission();
+// Send report via EmailJS with 10s timeout
+reportBtn.addEventListener('click', () => {
+    if (typeof emailjs === "undefined") {
+        reportStatus.textContent = "Email service not loaded!";
+        reportStatus.style.color = "red";
+        return;
+    }
 
-  const darkMode = localStorage.getItem("darkMode") || "on";
-  const notifications = localStorage.getItem("notifications") || "on";
+    const reportContent = reportText.value.trim();
+    if (!reportContent) {
+        reportStatus.textContent = "Please write something.";
+        reportStatus.style.color = "orange";
+        return;
+    }
 
-  if (darkMode === "off") {
-    document.body.classList.add("light-mode");
-    darkModeToggle.checked = false;
-  } else {
-    document.body.classList.remove("light-mode");
-    darkModeToggle.checked = true;
-  }
+    reportStatus.textContent = "Sending…";
+    reportStatus.style.color = "blue";
 
-  notificationsToggle.checked = notifications === "on";
+    let timeoutReached = false;
 
-  renderMessages();
+    // 10-second timeout
+    const timer = setTimeout(() => {
+        timeoutReached = true;
+        reportStatus.textContent = "Duration Time ended ❌";
+        reportStatus.style.color = "red";
+    }, 10000);
+
+    emailjs.send("service_tusp0cx", "template_ghapews", {
+        to_name: "Owner Name",
+        from_name: username,
+        message: reportContent,
+        subject: `FC Multi-Source Report from ${username}`
+    })
+    .then(() => {
+        if (!timeoutReached) {
+            clearTimeout(timer);
+            reportStatus.textContent = "Sent ✅";
+            reportStatus.style.color = "green";
+            reportText.value = '';
+        }
+    })
+    .catch(err => {
+        if (!timeoutReached) {
+            clearTimeout(timer);
+            reportStatus.textContent = "Error ❌";
+            reportStatus.style.color = "red";
+            console.error("Report failed:", err);
+        }
+    });
 });
