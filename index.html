@@ -15,6 +15,29 @@
       margin: 0;
     }
 
+    /* NAVBAR */
+    #navbar {
+      display: flex;
+      gap: 20px;
+      padding: 10px 15px;
+      background-color: #111;
+      border-bottom: 1px solid #444;
+    }
+
+    #navbar button {
+      background: #007bff;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+    }
+
+    #navbar button:hover {
+      background: #0056b3;
+    }
+
+    /* CHAT */
     #chat-container {
       flex: 1;
       overflow-y: auto;
@@ -78,34 +101,128 @@
       margin-top: 5px;
       font-style: italic;
     }
+
+    /* RULES PAGE */
+    #rules-page {
+      display: none;
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
-<body>
-  <div id="chat-container"></div>
 
-  <div id="input-container">
-    <input type="text" id="message-input" placeholder="Type a message">
-    <button id="send-btn">Send</button>
+<body>
+
+  <!-- NAVBAR -->
+  <div id="navbar">
+    <button onclick="showChat()">Chat</button>
+    <button onclick="showRules()">Rules</button>
   </div>
 
-  <div id="report-section">
-    <h3>Report a message/user</h3>
-    <textarea id="report-text" placeholder="Describe your issue"></textarea>
-    <button id="report-btn">Submit Report</button>
-    <p id="report-status"></p>
+  <!-- CHAT PAGE -->
+  <div id="chat-page">
+
+    <div id="chat-container"></div>
+
+    <div id="input-container">
+      <input type="text" id="message-input" placeholder="Type a message">
+      <button id="send-btn">Send</button>
+    </div>
+
+    <div id="report-section">
+      <h3>Report a message/user</h3>
+      <textarea id="report-text" placeholder="Describe your issue"></textarea>
+      <button id="report-btn">Submit Report</button>
+      <p id="report-status"></p>
+    </div>
+
+  </div>
+
+  <!-- RULES PAGE -->
+  <div id="rules-page">
+FC Rules Version 25:
+
+1- Don’t fight in the group. As it results in Full Termination until further notice.
+2- Don’t swear in the group. As it results in 12 hours of termination.
+3- Inappropriate behavior. As it results in 1 day of termination.
+4- Changing Group Property. As it results in 3 days of termination.
+5- Harassment. As it results in 12 hours of termination.
+6- Adding Banned People to the Group - As it results in 4 days of termination.
+7- Messages in another language: As it results in a warning message.
+8- Swearing in another language: As it results in 12 hours of termination.
+9- Advertising Groups: As it results in full termination until further notice.
+10- Sending Personal Information: As it results in 3 days of termination.
+11- Deleting Rules you broke: As it results in 1 day of termination.
+12- Editing Rules you broke: As it results in 2 days of termination.
+13- Copying The Group’s Rules into another group: As it results in 5 days of termination.
+14- Copying The Group’s Rules into another group and editing it: As it also results in 5 days of termination.
+15- Don’t make AI swear: As it results in 2 days of termination.
+16- Don’t say any brainrot: As it results in 1 day of termination.
+17- No Racism: As it results in 4 days of termination.
+18- Don’t become weird: As it results in 12 hours of termination.
+19- Don’t say any banned words: As it results in 12 hours of termination.
+
+Banned People Policy (BP):
+
+The BP List will update every time whenever someone gets banned. Results will show whenever a future version of the TOS is released if the BP List has a change.
+
+The No Fighting Policy:
+Fighting results as Community Property Destruction (CPD) and can result in parental contact and a full ban.
+
+Banned Words: G word, swear words, d word (if used on someone), “oh my god” as a joke, 67 if used as the meme.
+
+Rule 17 is basically Inappropriate behavior.
+
+If an error has occurred, notify the Owner.
+
+Group Properties Include: Group Name, Group Picture.
+Group Theme is not included.
+
+Repetition of breaking rules can result in Full Termination.
+
+Owner: “Hamza Mohamed”.
+
+Longest Call: 9 hours.
+Most Messages in a Day: 972 (estimated 1000).
+
+To become first in FC Multi-Source waitlist, contact Hamza.
+
+Events:
+Custom Events
+Zero Event
+4th of July Event
+20 People Event
+
+Updates in Rules List Version 25:
+New Event indexes
   </div>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- ✅ Correct EmailJS browser SDK -->
+  <!-- EmailJS -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser/dist/email.min.js"></script>
   <script>
-    emailjs.init("8ccRt_DLVUfYDESK7"); // Public key
+    emailjs.init("8ccRt_DLVUfYDESK7");
   </script>
 
-  <!-- Main app script -->
+  <!-- APP SCRIPT -->
   <script src="app.js"></script>
+
+  <script>
+    function showChat() {
+      document.getElementById("chat-page").style.display = "block";
+      document.getElementById("rules-page").style.display = "none";
+    }
+
+    function showRules() {
+      document.getElementById("chat-page").style.display = "none";
+      document.getElementById("rules-page").style.display = "block";
+    }
+  </script>
+
 </body>
 </html>
