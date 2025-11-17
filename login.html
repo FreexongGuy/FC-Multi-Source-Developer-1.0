@@ -27,12 +27,7 @@
       gap: 15px;
     }
 
-    h2 {
-      text-align: center;
-      margin: 0;
-    }
-
-    input[type="text"] {
+    input {
       padding: 10px;
       border-radius: 5px;
       border: none;
@@ -61,20 +56,26 @@
   </style>
 </head>
 <body>
+
   <div class="container">
     <h2>Login</h2>
+
     <input type="text" id="username" placeholder="Enter username">
+    <input type="password" id="pin" placeholder="Enter PIN">
+
     <button onclick="login()">Login</button>
+
     <p id="loginError" class="error"></p>
   </div>
 
   <script>
     async function login() {
       const username = document.getElementById("username").value.trim();
+      const pin = document.getElementById("pin").value.trim();
       const errorEl = document.getElementById("loginError");
 
-      if (!username) {
-        errorEl.innerText = "Please enter a username.";
+      if (!username || !pin) {
+        errorEl.innerText = "Enter both username and PIN.";
         return;
       }
 
@@ -82,22 +83,31 @@
         const res = await fetch("users.json");
         const users = await res.json();
 
-        if (users.includes(username)) {
-          // ✅ Store username for chat
-          localStorage.setItem("chatUsername", username);
+        // Find matching user object
+        const user = users.find(u => u.user === username);
 
-          // Redirect to chat
-          window.location.href = "index.html";
-        } else {
-          errorEl.innerText = "User not found.";
+        if (!user) {
+          errorEl.innerText = "User does not exist.";
+          return;
         }
+
+        if (user.pin !== pin) {
+          errorEl.innerText = "Incorrect PIN.";
+          return;
+        }
+
+        // Save logged in user
+        localStorage.setItem("chatUsername", username);
+
+        // Redirect to chat
+        window.location.href = "index.html";
+
       } catch (err) {
         errorEl.innerText = "Error loading users.";
         console.error(err);
       }
     }
-
-    window.login = login;
   </script>
+
 </body>
 </html>
