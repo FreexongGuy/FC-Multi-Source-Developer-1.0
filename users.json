@@ -1,9 +1,9 @@
 [
-    "fluckterrainium",
-    "mohamed_hamooda",
-    "younes_nukar",
-    "mrman",
-    "joethedoe",
-    "hazem",
-    "adamgtag"
+  { "user": "fluckterrainium", "pin": "2612" },
+  { "user": "mohamed_hamooda", "pin": "1731" },
+  { "user": "younes_nukar", "pin": "9981" },
+  { "user": "mrman", "pin": "1919" },
+  { "user": "joethedoe", "pin": "5090" },
+  { "user": "hazem", "pin": "4420" },
+  { "user": "adamgtag", "pin": "7711" }
 ]
