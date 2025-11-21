@@ -21,37 +21,84 @@ const reportText = document.getElementById('report-text');
 const reportBtn = document.getElementById('report-btn');
 const reportStatus = document.getElementById('report-status');
 
-// Get username from login
+// Username from login
 const username = localStorage.getItem('chatUsername') || "Anonymous";
+
+// Users data (embedded)
+const usersData = [
+  { "user": "fluckterrainium", "pin": "2612", "role": "member" },
+  { "user": "mohamed_hamooda", "pin": "1731", "role": "partner" },
+  { "user": "younes_nukar", "pin": "9981", "role": "partner" },
+  { "user": "mrman", "pin": "1919", "role": "partner" },
+  { "user": "joethedoe", "pin": "5090", "role": "partner" },
+  { "user": "hazem", "pin": "4420", "role": "partner" },
+  { "user": "adamgtag", "pin": "7711", "role": "member" },
+  { "user": "temo", "pin": "8118", "role": "partner" }
+];
+
+// Profile popup
+const profilePopup = document.createElement('div');
+profilePopup.style.position = 'absolute';
+profilePopup.style.background = '#222';
+profilePopup.style.color = '#fff';
+profilePopup.style.border = '1px solid #555';
+profilePopup.style.padding = '10px';
+profilePopup.style.borderRadius = '5px';
+profilePopup.style.display = 'none';
+profilePopup.style.zIndex = '1000';
+document.body.appendChild(profilePopup);
+
+function showProfile(user, event) {
+    const userInfo = usersData.find(u => u.user === user);
+    if (!userInfo) return;
+
+    profilePopup.innerHTML = `<strong>Username:</strong> ${userInfo.user}<br>
+                              <strong>Role:</strong> ${userInfo.role}`;
+    profilePopup.style.top = (event.pageY + 10) + 'px';
+    profilePopup.style.left = (event.pageX + 10) + 'px';
+    profilePopup.style.display = 'block';
+}
+
+// Hide popup if click outside username
+document.addEventListener('click', (e) => {
+    if (!e.target.classList.contains('name')) {
+        profilePopup.style.display = 'none';
+    }
+});
 
 // Display messages
 function displayMessages(messages) {
     chatContainer.innerHTML = '';
     Object.keys(messages).forEach(key => {
-        const messageData = messages[key];
-        const textValue = messageData.text;
-        const nameValue = messageData.name || "Anonymous";
+        const msgData = messages[key];
+        const name = msgData.name || "Anonymous";
+        const text = msgData.text;
 
-        if (textValue) {
-            const msgElement = document.createElement('div');
-            msgElement.classList.add('chat-message');
+        const msgElement = document.createElement('div');
+        msgElement.classList.add('chat-message');
 
-            const nameSpan = document.createElement('span');
-            nameSpan.classList.add('name');
-            nameSpan.textContent = nameValue + ": ";
-            msgElement.appendChild(nameSpan);
+        const nameLink = document.createElement('a');
+        nameLink.href = "#";
+        nameLink.classList.add('name');
+        nameLink.textContent = name + ": ";
+        nameLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showProfile(name, e);
+        });
 
-            const textSpan = document.createElement('span');
-            textSpan.textContent = textValue;
-            msgElement.appendChild(textSpan);
+        msgElement.appendChild(nameLink);
 
-            chatContainer.appendChild(msgElement);
-        }
+        const textSpan = document.createElement('span');
+        textSpan.textContent = text;
+        msgElement.appendChild(textSpan);
+
+        chatContainer.appendChild(msgElement);
     });
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Real-time listener for last 50 messages
+// Listen for last 50 messages
 dbRef.limitToLast(50).on('value', snapshot => {
     const data = snapshot.val();
     if (data) displayMessages(data);
@@ -65,9 +112,8 @@ sendBtn.addEventListener('click', () => {
             name: username,
             text: text,
             timestamp: Date.now()
-        }).then(() => {
-            messageInput.value = '';
-        }).catch(err => console.error("Error sending message:", err));
+        }).then(() => messageInput.value = '')
+          .catch(err => console.error("Error sending message:", err));
     }
 });
 
@@ -75,7 +121,7 @@ messageInput.addEventListener('keypress', e => {
     if (e.key === 'Enter') sendBtn.click();
 });
 
-// Send report via EmailJS with 10s timeout
+// Send report
 reportBtn.addEventListener('click', () => {
     if (typeof emailjs === "undefined") {
         reportStatus.textContent = "Email service not loaded!";
@@ -95,7 +141,6 @@ reportBtn.addEventListener('click', () => {
 
     let timeoutReached = false;
 
-    // 10-second timeout
     const timer = setTimeout(() => {
         timeoutReached = true;
         reportStatus.textContent = "Duration Time ended ❌";
