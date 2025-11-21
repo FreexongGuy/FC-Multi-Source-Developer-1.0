@@ -36,24 +36,31 @@ body {
     background-color: #2a2a45;
 }
 
-/* Chat container */
-#chat-page, #rules-page {
+#rules-page {
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
+#chat-page {
+    display: flex;
+    flex-direction: column;
+    flex: 1; /* Fill available vertical space */
+    min-height: 0; /* Important for flex scrolling */
+    overflow: hidden; /* Keep container height controlled */
+}
+
 #chat-container {
-    flex: 1;
-    overflow-y: auto;
+    flex: 1; /* Fill remaining space above input/report */
+    min-height: 0; /* Prevent shrinking to content */
+    overflow-y: auto; /* Always scroll if messages exceed container */
     padding: 15px;
     background-color: #121212;
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
-
 /* Chat messages */
 .chat-message {
     padding: 10px 15px;
