@@ -15,7 +15,7 @@
       margin: 0;
     }
 
-    /* NAVBAR */
+    /* Navbar */
     #navbar {
       display: flex;
       gap: 20px;
@@ -23,7 +23,6 @@
       background-color: #111;
       border-bottom: 1px solid #444;
     }
-
     #navbar button {
       background: #007bff;
       border: none;
@@ -32,19 +31,17 @@
       color: white;
       cursor: pointer;
     }
-
     #navbar button:hover {
       background: #0056b3;
     }
 
-    /* CHAT */
+    /* Chat container */
     #chat-container {
       flex: 1;
       overflow-y: auto;
       padding: 10px;
       border-bottom: 1px solid #444;
     }
-
     .chat-message {
       padding: 5px 10px;
       margin: 5px 0;
@@ -52,19 +49,20 @@
       border-radius: 5px;
       word-wrap: break-word;
     }
-
     .chat-message .name {
       font-weight: bold;
       color: #00ffff;
       margin-right: 5px;
+      cursor: pointer;
+      text-decoration: underline;
     }
 
+    /* Input and report */
     #input-container, #report-section {
       display: flex;
       padding: 10px;
       gap: 10px;
     }
-
     #message-input, #report-text {
       flex: 1;
       padding: 10px;
@@ -72,7 +70,6 @@
       border: none;
       outline: none;
     }
-
     #send-btn, #report-btn {
       padding: 10px 20px;
       border: none;
@@ -81,28 +78,24 @@
       color: #fff;
       cursor: pointer;
     }
-
     #send-btn:hover, #report-btn:hover {
       background-color: #0056b3;
     }
-
     #report-section {
       flex-direction: column;
       border-top: 1px solid #444;
       padding-top: 15px;
     }
-
     #report-section textarea {
       resize: vertical;
       min-height: 60px;
     }
-
     #report-status {
       margin-top: 5px;
       font-style: italic;
     }
 
-    /* RULES PAGE */
+    /* Rules page */
     #rules-page {
       display: none;
       padding: 20px;
@@ -115,15 +108,14 @@
 
 <body>
 
-  <!-- NAVBAR -->
+  <!-- Navbar -->
   <div id="navbar">
     <button onclick="showChat()">Chat</button>
     <button onclick="showRules()">Rules</button>
   </div>
 
-  <!-- CHAT PAGE -->
+  <!-- Chat page -->
   <div id="chat-page">
-
     <div id="chat-container"></div>
 
     <div id="input-container">
@@ -137,10 +129,9 @@
       <button id="report-btn">Submit Report</button>
       <p id="report-status"></p>
     </div>
-
   </div>
 
-  <!-- RULES PAGE -->
+  <!-- Rules page -->
   <div id="rules-page">
 FC Rules Version 25:
 
@@ -158,11 +149,10 @@ FC Rules Version 25:
 12- Editing Rules you broke: As it results in 2 days of termination.
 13- Copying The Group’s Rules into another group: As it results in 5 days of termination.
 14- Copying The Group’s Rules into another group and editing it: As it also results in 5 days of termination.
-15- Don’t make AI swear: As it results in 2 days of termination.
-16- Don’t say any brainrot: As it results in 1 day of termination.
-17- No Racism: As it results in 4 days of termination.
-18- Don’t become weird: As it results in 12 hours of termination.
-19- Don’t say any banned words: As it results in 12 hours of termination.
+15- Don’t say any brainrot: As it results in 1 day of termination.
+16- No Racism: As it results in 4 days of termination.
+17- Don’t become weird: As it results in 12 hours of termination.
+18- Don’t say any banned words: As it results in 12 hours of termination.
 
 Banned People Policy (BP):
 
@@ -173,12 +163,9 @@ Fighting results as Community Property Destruction (CPD) and can result in paren
 
 Banned Words: G word, swear words, d word (if used on someone), “oh my god” as a joke, 67 if used as the meme.
 
-Rule 17 is basically Inappropriate behavior.
+Rule 16 is basically Inappropriate behavior.
 
 If an error has occurred, notify the Owner.
-
-Group Properties Include: Group Name, Group Picture.
-Group Theme is not included.
 
 Repetition of breaking rules can result in Full Termination.
 
@@ -195,11 +182,13 @@ Zero Event
 4th of July Event
 20 People Event
 
-Updates in Rules List Version 25:
+Updates in Rules List Version 26:
+Removed rule "Don't make AI Swear"
+Reason: AI Doesn't exist here. (in development)
 New Event indexes
   </div>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -209,7 +198,7 @@ New Event indexes
     emailjs.init("8ccRt_DLVUfYDESK7");
   </script>
 
-  <!-- APP SCRIPT -->
+  <!-- App -->
   <script src="app.js"></script>
 
   <script>
