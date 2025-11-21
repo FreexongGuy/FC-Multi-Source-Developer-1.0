@@ -1,9 +1,10 @@
 [
-  { "user": "fluckterrainium", "pin": "2612" },
-  { "user": "mohamed_hamooda", "pin": "1731" },
-  { "user": "younes_nukar", "pin": "9981" },
-  { "user": "mrman", "pin": "1919" },
-  { "user": "joethedoe", "pin": "5090" },
-  { "user": "hazem", "pin": "4420" },
-  { "user": "adamgtag", "pin": "7711" }
+  { "user": "fluckterrainium", "pin": "2612", "role": "owner" },
+  { "user": "mohamed_hamooda", "pin": "1731", "role": "partner" },
+  { "user": "younes_nukar", "pin": "9981", "role": "partner" },
+  { "user": "mrman", "pin": "1919", "role": "partner" },
+  { "user": "joethedoe", "pin": "5090", "role": "partner" },
+  { "user": "hazem", "pin": "4420", "role": "partner" },
+  { "user": "adamgtag", "pin": "7711", "role": "member" },
+  { "user": "temo", "pin": "8118", "role": "partner" }
 ]
