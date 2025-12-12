@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FC Multi-Source Call Chat</title>
+  <link rel="stylesheet" href="call.css">
+</head>
+<body>
+
+<h1>Call Chat</h1>
+
+<!-- Video / audio preview placeholders -->
+<div id="local-preview">You</div>
+<div id="remote-preview">Others</div>
+
+<!-- Call controls -->
+<div id="call-controls">
+  <button id="mute-btn">Mute</button>
+  <button id="leave-btn">Leave Call</button>
+  <span id="call-status"></span>
+</div>
+
+<!-- Participants list -->
+<div id="participants-container">
+  <h3>Participants</h3>
+  <ul id="participants-list"></ul>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyApJyJrg_dLkBdA08heBNlfIZObSY9LqXk",
+  authDomain: "fc-multi-source.firebaseapp.com",
+  databaseURL: "https://fc-multi-source-default-rtdb.firebaseio.com/",
+  projectId: "fc-multi-source",
+  storageBucket: "fc-multi-source.firebasestorage.app",
+  messagingSenderId: "382569307630",
+  appId: "1:382569307630:web:91525c992dfd6f1a72e76a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const callRef = firebase.database().ref("callChatAudio");
+const participantsRef = firebase.database().ref("callParticipants");
+
+// Get username from localStorage (from app.js)
+const username = localStorage.getItem('chatUsername') || "Anonymous";
+
+let localStream;
+let audioContext;
+let processor;
+let muted = false;
+
+// Join call automatically
+(async function startCallChat() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch {
+    alert("Microphone access denied.");
+    return;
+  }
+
+  document.getElementById("call-status").textContent = "Connected";
+
+  // Add user to participants list (by username)
+  participantsRef.child(username).set(true);
+  participantsRef.child(username).onDisconnect().remove();
+
+  // Update participants list UI
+  participantsRef.on("value", snap => {
+    const participants = snap.val() || {};
+    const list = document.getElementById("participants-list");
+    list.innerHTML = "";
+    for (const name in participants) {
+      const li = document.createElement("li");
+      li.textContent = name;
+      list.appendChild(li);
+    }
+  });
+
+  // Audio setup
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  await audioContext.resume();
+
+  const source = audioContext.createMediaStreamSource(localStream);
+  processor = audioContext.createScriptProcessor(2048, 1, 1);
+  source.connect(processor);
+  processor.connect(audioContext.destination);
+
+  processor.onaudioprocess = function(e) {
+    if (muted) return;
+    const input = e.inputBuffer.getChannelData(0);
+    const data = Array.from(input);
+    callRef.set({ audio: data });
+  };
+
+  // Listen for others' audio
+  callRef.on("value", snap => {
+    if (!snap.exists()) return;
+    const { audio } = snap.val();
+    if (!audio) return;
+    playReceivedAudio(audio);
+  });
+
+})();
+
+function playReceivedAudio(data) {
+  const buffer = audioContext.createBuffer(1, data.length, audioContext.sampleRate);
+  buffer.getChannelData(0).set(data);
+  const src = audioContext.createBufferSource();
+  src.buffer = buffer;
+  src.connect(audioContext.destination);
+  src.start(0);
+}
+
+// Mute toggle
+document.getElementById("mute-btn").onclick = () => {
+  muted = !muted;
+  document.getElementById("mute-btn").textContent = muted ? "Unmute" : "Mute";
+};
+
+// Leave call
+document.getElementById("leave-btn").onclick = () => {
+  if (processor) processor.disconnect();
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
+  callRef.remove();
+  participantsRef.child(username).remove();
+
+  // Redirect back to main page
+  location.href = "index.html";
+};
+</script>
+
+</body>
+</html>
