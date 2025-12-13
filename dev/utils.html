@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dev Utilities - FC Multi-Source</title>
+  <link rel="stylesheet" href="utils.css">
+  <style>
+    /* Highlight matches */
+    .highlight {
+      background-color: #4a90e2;
+      color: #fff;
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+
+    /* Scrollable list style */
+    .scrollable-list {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #333;
+      padding: 5px;
+      margin-top: 10px;
+      font-family: monospace;
+      background: #1e1e1e;
+      color: #fff;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    #firebase-contents div {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 8px;
+      border-bottom: 1px solid #333;
+    }
+
+    .search-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 5px;
+    }
+
+    .search-controls input {
+      flex: 1;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background-color: #1e1e1e;
+      color: #fff;
+    }
+
+    .search-controls button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: #4a90e2;
+      color: #fff;
+    }
+
+    .search-controls button:hover {
+      background-color: #357ABD;
+    }
+
+    /* Users table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    thead th {
+      background-color: #1f1f1f;
+      padding: 10px;
+      border-bottom: 2px solid #333;
+    }
+
+    tbody td {
+      padding: 8px;
+      border-bottom: 1px solid #333;
+    }
+
+    .buttons-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .buttons-row button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: #4a90e2;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .buttons-row button:hover {
+      background-color: #357ABD;
+    }
+
+    /* FC Guard Controller */
+    #fc-guard-controller {
+      margin-top: 20px;
+    }
+
+    .fc-guard-input {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #fc-guard-msg {
+      width: 100%;
+      min-height: 80px;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background-color: #1e1e1e;
+      color: #fff;
+      resize: vertical;
+      overflow: auto;
+      font-family: monospace;
+    }
+
+    #send-fc-guard-msg {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: #4a90e2;
+      color: #fff;
+      transition: all 0.2s ease;
+    }
+
+    #send-fc-guard-msg:hover {
+      background-color: #357ABD;
+    }
+
+  </style>
+</head>
+<body>
+
+<h1>Dev Utilities</h1>
+
+<!-- Firebase Users View -->
+<section id="firebase-view">
+  <h2>Firebase Users View</h2>
+  <div class="buttons-row">
+    <button id="add-user-btn">Add User</button>
+    <button id="ban-user-btn">Ban User</button>
+    <button id="unban-user-btn">Unban User</button>
+    <button id="remove-user-btn">Remove User</button>
+  </div>
+
+  <table id="users-table">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>PIN</th>
+        <th>State</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+<!-- FC Guard Controller -->
+<section id="fc-guard-controller">
+  <h2>FC Guard Controller</h2>
+  <div class="fc-guard-input">
+    <textarea id="fc-guard-msg" placeholder="Type announcement"></textarea>
+    <button id="send-fc-guard-msg">Send Announcement</button>
+  </div>
+
+  <h3>Current Announcements</h3>
+  <div id="fc-guard-announcements" class="scrollable-list"></div>
+</section>
+
+<!-- Firebase Contents View -->
+<section id="firebase-contents-view">
+  <h2>Firebase Database Contents</h2>
+  <div class="search-controls">
+    <input type="text" id="contents-search" placeholder="Search database...">
+  </div>
+  <div id="firebase-contents" class="scrollable-list"></div>
+</section>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, push, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyApJyJrg_dLkBdA08heBNlfIZObSY9LqXk",
+  authDomain: "fc-multi-source.firebaseapp.com",
+  databaseURL: "https://fc-multi-source-default-rtdb.firebaseio.com",
+  projectId: "fc-multi-source",
+  storageBucket: "fc-multi-source.firebasestorage.app",
+  messagingSenderId: "602428529893",
+  appId: "1:602428529893:web:5da6267bead4539113080c"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const usersRef = ref(db, "users");
+const announcementsRef = ref(db, "announcements");
+const contentsDiv = document.getElementById("firebase-contents");
+
+// ---------------- Users Table ----------------
+const usersTableBody = document.querySelector("#users-table tbody");
+
+function refreshUsers() {
+  onValue(usersRef, snapshot => {
+    const users = snapshot.val() || {};
+    usersTableBody.innerHTML = "";
+    Object.keys(users).forEach(uid => {
+      const user = users[uid];
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${user.user}</td>
+        <td>${user.pin}</td>
+        <td>${user.state || "Open"}</td>
+      `;
+      usersTableBody.appendChild(tr);
+    });
+  });
+}
+refreshUsers();
+
+// Add User
+document.getElementById("add-user-btn").addEventListener("click", () => {
+  const username = prompt("Enter username:");
+  const pin = prompt("Enter PIN:");
+  if (!username || !pin) return;
+  const newUserRef = push(usersRef);
+  set(newUserRef, { user: username, pin: pin, state: "Open" });
+});
+
+// Ban User
+document.getElementById("ban-user-btn").addEventListener("click", async () => {
+  const snapshot = await get(usersRef);
+  const users = snapshot.val() || {};
+  const usernames = Object.values(users).map(u => u.user).filter(u => u !== "FC Guard");
+  const selected = prompt("Enter username to ban:\n" + usernames.join(", "));
+  if (!selected || selected === "FC Guard") return;
+  const uid = Object.keys(users).find(k => users[k].user === selected);
+  update(ref(db, `users/${uid}`), { state: "Terminated" });
+});
+
+// Unban User
+document.getElementById("unban-user-btn").addEventListener("click", async () => {
+  const snapshot = await get(usersRef);
+  const users = snapshot.val() || {};
+  const bannedUsers = Object.values(users).filter(u => u.state === "Terminated").map(u => u.user);
+  const selected = prompt("Enter username to unban:\n" + bannedUsers.join(", "));
+  if (!selected) return;
+  const uid = Object.keys(users).find(k => users[k].user === selected);
+  update(ref(db, `users/${uid}`), { state: "Open" });
+});
+
+// Remove User
+document.getElementById("remove-user-btn").addEventListener("click", async () => {
+  const snapshot = await get(usersRef);
+  const users = snapshot.val() || {};
+  const usernames = Object.values(users).map(u => u.user).filter(u => u !== "FC Guard");
+  const selected = prompt("Enter username to remove:\n" + usernames.join(", "));
+  if (!selected || selected === "FC Guard") return;
+  const uid = Object.keys(users).find(k => users[k].user === selected);
+  remove(ref(db, `users/${uid}`));
+});
+
+// ---------------- FC Guard Announcements ----------------
+const announcementsList = document.getElementById("fc-guard-announcements");
+const inputEl = document.getElementById("fc-guard-msg");
+const sendBtn = document.getElementById("send-fc-guard-msg");
+
+sendBtn.addEventListener("click", () => {
+  const msg = inputEl.value.trim();
+  if (!msg) return;
+  const newRef = push(announcementsRef);
+  set(newRef, { message: msg, timestamp: Date.now() });
+  inputEl.value = "";
+});
+
+onValue(announcementsRef, snapshot => {
+  const data = snapshot.val() || {};
+  announcementsList.innerHTML = "";
+  Object.keys(data).sort((a,b) => data[a].timestamp - data[b].timestamp).forEach(key => {
+    const annDiv = document.createElement("div");
+    annDiv.textContent = data[key].message;
+
+    const removeBtn = document.createElement("button");
+    removeBtn.textContent = "Remove";
+    removeBtn.onclick = () => remove(ref(db, "announcements/" + key));
+
+    annDiv.appendChild(removeBtn);
+    announcementsList.appendChild(annDiv);
+  });
+});
+
+// ---------------- Firebase Contents View ----------------
+let dbData = {};
+
+function highlightText(text, search) {
+  if (!search) return text;
+  const regex = new RegExp(search, "gi");
+  return text.replace(regex, match => `<span class="highlight">${match}</span>`);
+}
+
+function renderContents(search = "") {
+  contentsDiv.innerHTML = "";
+
+  function renderObject(obj, container, path = "") {
+    for (const key in obj) {
+      if (key === "callChatAudio") continue;
+      const value = obj[key];
+      const fullPath = path ? path + "/" + key : key;
+
+      let valueStr = (typeof value === "object" && value !== null) ? JSON.stringify(value) : String(value);
+      const combinedText = fullPath + " " + valueStr;
+      const matches = search && combinedText.toLowerCase().includes(search.toLowerCase());
+      if (!matches) continue;
+
+      const itemDiv = document.createElement("div");
+      const keySpan = document.createElement("span");
+      keySpan.innerHTML = highlightText(fullPath, search);
+      const valSpan = document.createElement("span");
+      valSpan.innerHTML = highlightText(valueStr, search);
+
+      itemDiv.appendChild(keySpan);
+      itemDiv.appendChild(valSpan);
+      container.appendChild(itemDiv);
+
+      if (typeof value === "object" && value !== null) renderObject(value, container, fullPath);
+    }
+  }
+
+  renderObject(dbData, contentsDiv, "");
+}
+
+onValue(ref(db), snapshot => {
+  dbData = snapshot.val() || {};
+  renderContents(document.getElementById("contents-search").value);
+});
+
+document.getElementById("contents-search").addEventListener("input", e => {
+  renderContents(e.target.value);
+});
+</script>
+</body>
+</html>
