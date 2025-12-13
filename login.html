@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - FC Multi-Source</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -68,46 +69,8 @@
     <p id="loginError" class="error"></p>
   </div>
 
-  <script>
-    async function login() {
-      const username = document.getElementById("username").value.trim();
-      const pin = document.getElementById("pin").value.trim();
-      const errorEl = document.getElementById("loginError");
-
-      if (!username || !pin) {
-        errorEl.innerText = "Enter both username and PIN.";
-        return;
-      }
-
-      try {
-        const res = await fetch("users.json");
-        const users = await res.json();
-
-        // Find matching user object
-        const user = users.find(u => u.user === username);
-
-        if (!user) {
-          errorEl.innerText = "User does not exist.";
-          return;
-        }
-
-        if (user.pin !== pin) {
-          errorEl.innerText = "Incorrect PIN.";
-          return;
-        }
-
-        // Save logged in user
-        localStorage.setItem("chatUsername", username);
-
-        // Redirect to chat
-        window.location.href = "index.html";
-
-      } catch (err) {
-        errorEl.innerText = "Error loading users.";
-        console.error(err);
-      }
-    }
-  </script>
+  <!-- Firebase login logic -->
+  <script type="module" src="auth.js"></script>
 
 </body>
 </html>

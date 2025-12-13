@@ -1,34 +1,63 @@
-// Login system using users.json
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getDatabase,
+  ref,
+  get
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyApJyJrg_dLkBdA08heBNlfIZObSY9LqXk",
+  authDomain: "fc-multi-source.firebaseapp.com",
+  databaseURL: "https://fc-multi-source-default-rtdb.firebaseio.com",
+  projectId: "fc-multi-source",
+  storageBucket: "fc-multi-source.firebasestorage.app",
+  messagingSenderId: "602428529893",
+  appId: "1:602428529893:web:5da6267bead4539113080c"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
 async function login() {
   const username = document.getElementById("username").value.trim();
+  const pin = document.getElementById("pin").value.trim();
   const errorEl = document.getElementById("loginError");
 
-  // Check if username is empty
-  if (!username) {
-    errorEl.innerText = "Please enter a username.";
+  if (!username || !pin) {
+    errorEl.innerText = "Enter both username and PIN.";
     return;
   }
 
-  try {
-    // Fetch users list from users.json
-    const res = await fetch("users.json");
-    const users = await res.json();
-
-    // Check if username exists
-    if (users.includes(username)) {
-      // ✅ Store username for chat
-      localStorage.setItem("chatUsername", username);
-
-      // Redirect to chat page
-      window.location.href = "../index.html";
-    } else {
-      errorEl.innerText = "User not found.";
-    }
-  } catch (err) {
-    errorEl.innerText = "Error loading users.";
-    console.error("Login error:", err);
+  const snap = await get(ref(db, "users"));
+  if (!snap.exists()) {
+    errorEl.innerText = "No users found.";
+    return;
   }
+
+  const users = snap.val();
+
+  for (const id in users) {
+    const u = users[id];
+
+    if (u.user === username) {
+
+      if (u.state === "Terminated") {
+        errorEl.innerText = "This account is banned.";
+        return;
+      }
+
+      if (u.pin !== pin) {
+        errorEl.innerText = "Incorrect PIN.";
+        return;
+      }
+
+      localStorage.setItem("chatUsername", username);
+      window.location.href = "index.html";
+      return;
+    }
+  }
+
+  errorEl.innerText = "User does not exist.";
 }
 
-// Make login function available globally
 window.login = login;
