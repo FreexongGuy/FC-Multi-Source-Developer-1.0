@@ -1,0 +1,151 @@
+/* ---------------- General Page ---------------- */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #121212;
+  color: #ffffff;
+  margin: 0;
+  padding: 20px;
+}
+
+h1, h2, h3 {
+  color: #ffffff;
+}
+
+button {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+/* ---------------- Users Table ---------------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+thead th {
+  background-color: #1f1f1f;
+  padding: 10px;
+  border-bottom: 2px solid #333;
+}
+
+tbody td {
+  padding: 8px;
+  border-bottom: 1px solid #333;
+}
+
+/* ---------------- Buttons Row ---------------- */
+.buttons-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.buttons-row button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  background-color: #4a90e2;
+  color: #fff;
+}
+
+.buttons-row button:hover {
+  background-color: #357ABD;
+}
+
+/* ---------------- Scrollable Lists ---------------- */
+.scrollable-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #333;
+  padding: 5px;
+  background-color: #1e1e1e;
+  font-family: monospace;
+  border-radius: 5px;
+}
+
+/* ---------------- FC Guard Controller ---------------- */
+#fc-guard-controller {
+  margin-top: 20px;
+}
+
+#fc-guard-msg {
+  width: 100%;
+  min-height: 80px;      /* initial height */
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #333;
+  background-color: #1e1e1e;
+  color: #fff;
+  resize: vertical;      /* allows vertical resizing */
+  overflow: auto;        /* scroll when content exceeds box */
+  font-family: monospace;
+}
+
+
+#send-fc-guard-msg {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  background-color: #4a90e2;
+  color: #fff;
+  transition: all 0.2s ease;
+}
+
+#send-fc-guard-msg:hover {
+  background-color: #357ABD;
+}
+
+/* ---------------- Search Controls ---------------- */
+.search-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.search-controls input {
+  flex: 1;
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #333;
+  background-color: #1e1e1e;
+  color: #fff;
+}
+
+.search-controls button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  background-color: #4a90e2;
+  color: #fff;
+}
+
+.search-controls button:hover {
+  background-color: #357ABD;
+}
+
+/* ---------------- Highlight ---------------- */
+.highlight {
+  background-color: #4a90e2;
+  color: #fff;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* ---------------- Firebase Contents ---------------- */
+#firebase-contents div {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-bottom: 1px solid #333;
+  transition: background 0.2s;
+}
+
+#firebase-contents div:hover {
+  background-color: #2a2a2a;
+}
