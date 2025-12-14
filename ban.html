@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account Banned - FC Multi-Source</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #1a1a1a;
+    color: #ff4d4d;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #ban-message {
+    text-align: center;
+    padding: 30px;
+    border: 2px solid #ff4d4d;
+    border-radius: 15px;
+    background-color: #2a2a2a;
+    max-width: 90%;
+  }
+
+  h1 { font-size: 3em; margin-bottom: 20px; }
+  p { font-size: 1.2em; margin: 8px 0; }
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<div id="ban-message">
+  <h1>Account Banned</h1>
+  <p id="ban-period"></p>
+  <p id="ban-reason"></p>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyApJyJrg_dLkBdA08heBNlfIZObSY9LqXk",
+  authDomain: "fc-multi-source.firebaseapp.com",
+  databaseURL: "https://fc-multi-source-default-rtdb.firebaseio.com",
+  projectId: "fc-multi-source",
+  storageBucket: "fc-multi-source.firebasestorage.app",
+  messagingSenderId: "602428529893",
+  appId: "1:602428529893:web:5da6267bead4539113080c"
+};
+
+firebase.initializeApp(firebaseConfig);
+const dbRef = firebase.database().ref("users");
+
+const username = localStorage.getItem('chatUsername');
+if (!username) {
+  document.getElementById('ban-message').innerHTML = "<h1>No user logged in</h1>";
+} else {
+  function checkBanStatus() {
+    dbRef.orderByChild("user").equalTo(username).once("value").then(snapshot => {
+      const data = snapshot.val();
+      if (!data) return;
+      const userId = Object.keys(data)[0];
+      const user = data[userId];
+
+      // If the user is no longer terminated, redirect to index.html
+      if (user.state !== "Terminated") {
+        window.location.href = "index.html";
+        return;
+      }
+
+      // Display ban info
+      const banFrom = user.banFrom ? new Date(user.banFrom).toLocaleString() : "Unknown";
+      const banTo = user.banTo ? new Date(user.banTo).toLocaleString() : "Indefinite";
+      const reason = user.banReason || "No reason provided";
+
+      document.getElementById('ban-period').textContent = `From: ${banFrom} To: ${banTo}`;
+      document.getElementById('ban-reason').textContent = `Reason: ${reason}`;
+    });
+  }
+
+  checkBanStatus(); // Initial load
+  setInterval(checkBanStatus, 500); // check every 500ms
+}
+</script>
+
+</body>
+</html>

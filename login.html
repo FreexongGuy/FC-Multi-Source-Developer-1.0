@@ -3,74 +3,157 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - FC Multi-Source</title>
-
+  <title>FC Multi-Source Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
+    /* Reset & basic styling */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background-color: #1e1e1e;
-      color: #fff;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      margin: 0;
+      background: linear-gradient(135deg, #0f0f0f, #1c1c2e);
+      color: #e0e0e0;
     }
 
-    .container {
-      background-color: #2e2e2e;
-      padding: 30px;
-      border-radius: 10px;
-      width: 300px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    .login-container {
+      background: #121212;
+      padding: 40px 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      transition: 0.3s ease;
+    }
+
+    .login-container:hover {
+      box-shadow: 0 15px 50px rgba(0,0,0,0.7);
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 25px;
+      color: #00d1ff;
+    }
+
+    .input-group {
       display: flex;
       flex-direction: column;
       gap: 15px;
+      margin-bottom: 25px;
     }
 
     input {
-      padding: 10px;
-      border-radius: 5px;
+      padding: 14px 18px;
+      border-radius: 10px;
       border: none;
+      background-color: #1a1a1a;
+      color: #fff;
+      font-size: 16px;
       outline: none;
-      width: 100%;
+      transition: 0.3s;
+    }
+
+    input:focus {
+      background-color: #222;
+      box-shadow: 0 0 0 2px #00d1ff;
     }
 
     button {
-      padding: 10px;
-      border-radius: 5px;
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
       border: none;
-      background-color: #007bff;
-      color: #fff;
+      background-color: #00d1ff;
+      color: #121212;
+      font-weight: 600;
+      font-size: 16px;
       cursor: pointer;
+      transition: 0.3s;
     }
 
     button:hover {
-      background-color: #0056b3;
+      background-color: #009ecf;
     }
 
-    .error {
-      color: #ff5555;
-      font-size: 0.9em;
-      text-align: center;
+    .signup-link {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #aaa;
+      transition: 0.3s;
+    }
+
+    .signup-link a {
+      color: #00d1ff;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 450px) {
+      .login-container {
+        padding: 30px 20px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
     }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <h2>Login</h2>
-
-    <input type="text" id="username" placeholder="Enter username">
-    <input type="password" id="pin" placeholder="Enter PIN">
-
-    <button onclick="login()">Login</button>
-
-    <p id="loginError" class="error"></p>
+<div class="login-container">
+  <h1>FC Multi-Source Login</h1>
+  <div class="input-group">
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="pin" placeholder="PIN">
   </div>
+  <button id="login-btn">Login</button>
+  <p class="signup-link">Don't have an account? <a href="register.html">Sign Up</a></p>
+</div>
 
-  <!-- Firebase login logic -->
-  <script type="module" src="auth.js"></script>
+<script>
+  const loginBtn = document.getElementById('login-btn');
+
+  loginBtn.addEventListener('click', () => {
+    const username = document.getElementById('username').value.trim();
+    const pin = document.getElementById('pin').value.trim();
+
+    if (!username || !pin) {
+      alert("Please enter both username and PIN!");
+      return;
+    }
+
+    // Fetch users.json for verification
+    fetch('users.json')
+      .then(res => res.json())
+      .then(users => {
+        const user = users.find(u => u.user === username && u.pin === pin);
+        if (user) {
+          localStorage.setItem('chatUsername', username);
+          window.location.href = "index.html";
+        } else {
+          alert("Invalid username or PIN!");
+        }
+      })
+      .catch(err => {
+        console.error("Error loading users.json:", err);
+        alert("Failed to load users data.");
+      });
+  });
+</script>
 
 </body>
 </html>

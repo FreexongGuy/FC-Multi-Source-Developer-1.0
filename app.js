@@ -1,4 +1,4 @@
-// Firebase configuration
+// ---------------- Firebase ----------------
 const firebaseConfig = {
   apiKey: "AIzaSyApJyJrg_dLkBdA08heBNlfIZObSY9LqXk",
   authDomain: "fc-multi-source.firebaseapp.com",
@@ -8,12 +8,12 @@ const firebaseConfig = {
   messagingSenderId: "602428529893",
   appId: "1:602428529893:web:5da6267bead4539113080c"
 };
-
-// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const messagesRef = db.ref("messages");
+const usersRef = db.ref("users");
 
-// References
-const dbRef = firebase.database().ref('messages');
+// ---------------- DOM Elements ----------------
 const chatContainer = document.getElementById('chat-container');
 const messageInput = document.getElementById('message-input');
 const sendBtn = document.getElementById('send-btn');
@@ -21,19 +21,35 @@ const reportText = document.getElementById('report-text');
 const reportBtn = document.getElementById('report-btn');
 const reportStatus = document.getElementById('report-status');
 
-// Get username from login
-const username = localStorage.getItem('chatUsername') || "Anonymous";
+// ---------------- Check login ----------------
+const currentUser = localStorage.getItem("fc_current_user");
 
-// Load users.json
+if (!currentUser) {
+  window.location.href = "login.html";
+} else {
+  // Check user state
+  usersRef.orderByChild("user").equalTo(currentUser).once("value", snapshot => {
+    const userData = snapshot.val();
+    if (!userData) return;
+
+    const uid = Object.keys(userData)[0];
+    const state = userData[uid].state || "Open";
+    localStorage.setItem("fc_current_user_state", state);
+
+    if (state === "Terminated") {
+      window.location.href = "ban.html";
+    }
+  });
+}
+
+// ---------------- Load users.json ----------------
 let usersList = [];
 fetch('users.json')
   .then(res => res.json())
   .then(data => usersList = data)
   .catch(err => console.error("Error loading users.json:", err));
 
-// ---------------------------
-// Display messages
-// ---------------------------
+// ---------------- Display messages ----------------
 function displayMessages(messages) {
   chatContainer.innerHTML = '';
   const keys = Object.keys(messages).slice(-50); // last 50 messages
@@ -65,55 +81,46 @@ function displayMessages(messages) {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// ---------------------------
-// Real-time listener
-// ---------------------------
-dbRef.limitToLast(50).on('value', snapshot => {
+// ---------------- Real-time listener ----------------
+messagesRef.limitToLast(50).on('value', snapshot => {
   const data = snapshot.val();
   if (data) displayMessages(data);
 });
 
-// ---------------------------
-// Send chat message
-// ---------------------------
+// ---------------- Send message ----------------
 sendBtn.addEventListener('click', () => {
+  const username = localStorage.getItem('fc_current_user') || "Anonymous"; // latest
   const text = messageInput.value.trim();
   if (!text) return;
 
-  dbRef.push().set({
+  messagesRef.push().set({
     name: username,
     text: text,
     timestamp: Date.now()
   }).then(() => {
     messageInput.value = '';
-  }).catch(err => console.error("Error sending message:", err));
+  });
 });
 
 messageInput.addEventListener('keypress', e => {
   if (e.key === 'Enter') sendBtn.click();
 });
 
-// ---------------------------
-// Profile popup
-// ---------------------------
+// ---------------- Profile popup ----------------
 const profilePopup = document.createElement('div');
 profilePopup.id = 'profile-popup';
 document.body.appendChild(profilePopup);
 
 function showProfile(name) {
-  const user = usersList.find(u => u.user === name) || { role: "member" };
+  const user = usersList.find(u => u.user === name) || { role: "member", user: name };
   profilePopup.innerHTML = `<strong>${user.user}</strong><br>Role: ${user.role}`;
   profilePopup.style.display = 'block';
 }
 
-// Hide profile on click elsewhere
 document.addEventListener('click', e => {
-  if (!e.target.classList.contains('name')) {
-    profilePopup.style.display = 'none';
-  }
+  if (!e.target.classList.contains('name')) profilePopup.style.display = 'none';
 });
 
-// Position profile popup near the username
 chatContainer.addEventListener('click', e => {
   if (e.target.classList.contains('name')) {
     const rect = e.target.getBoundingClientRect();
@@ -122,9 +129,7 @@ chatContainer.addEventListener('click', e => {
   }
 });
 
-// ---------------------------
-// Send report via EmailJS
-// ---------------------------
+// ---------------- Send report via EmailJS ----------------
 reportBtn.addEventListener('click', () => {
   if (typeof emailjs === "undefined") {
     reportStatus.textContent = "Email service not loaded!";
@@ -132,6 +137,7 @@ reportBtn.addEventListener('click', () => {
     return;
   }
 
+  const username = localStorage.getItem('fc_current_user') || "Anonymous"; // latest
   const reportContent = reportText.value.trim();
   if (!reportContent) {
     reportStatus.textContent = "Please write something.";
@@ -143,7 +149,6 @@ reportBtn.addEventListener('click', () => {
   reportStatus.style.color = "blue";
 
   let timeoutReached = false;
-
   const timer = setTimeout(() => {
     timeoutReached = true;
     reportStatus.textContent = "Duration Time ended ❌";
@@ -173,29 +178,3 @@ reportBtn.addEventListener('click', () => {
     }
   });
 });
-
-// ---------------------------
-// Page switching
-// ---------------------------
-function showChat() {
-  const chatPage = document.getElementById("chat-page");
-  const rulesPage = document.getElementById("rules-page");
-
-  chatPage.style.display = "flex";
-  chatPage.style.flexDirection = "column";
-
-  rulesPage.style.display = "none";
-
-  const chatContainer = document.getElementById("chat-container");
-  chatContainer.style.flex = "1";
-  chatContainer.style.minHeight = "0";
-  chatContainer.style.overflowY = "auto";
-}
-
-function showRules() {
-  const chatPage = document.getElementById("chat-page");
-  const rulesPage = document.getElementById("rules-page");
-
-  chatPage.style.display = "none";
-  rulesPage.style.display = "block";
-}
