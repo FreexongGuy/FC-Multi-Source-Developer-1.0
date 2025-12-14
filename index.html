@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FC Multi-Source Chat</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser/dist/email.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FC Multi-Source Chat</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -47,7 +48,7 @@
 
 <script>
   // ---------------------------
-  // Firebase and EmailJS
+  // Firebase config
   // ---------------------------
   const firebaseConfig = {
     apiKey: "AIzaSyApJyJrg_dLkBdA08heBNlfIZObSY9LqXk",
@@ -70,18 +71,57 @@
   const reportText = document.getElementById('report-text');
   const reportBtn = document.getElementById('report-btn');
   const reportStatus = document.getElementById('report-status');
+  const notifSound = document.getElementById("notif-sound");
 
   const username = localStorage.getItem('chatUsername');
   if (!username) window.location.href = "login.html";
 
-  const notifSound = document.getElementById("notif-sound");
+  // ---------------------------
+  // Track last message
+  // ---------------------------
+  let lastTimestamp = 0;
 
   // ---------------------------
-  // Notification Permission
+  // Notification & FCM setup
   // ---------------------------
   if ("Notification" in window && Notification.permission !== "granted") {
     Notification.requestPermission();
   }
+
+  const messaging = firebase.messaging();
+
+  navigator.serviceWorker.register('/firebase-messaging-sw.js')
+  .then(registration => {
+    messaging.useServiceWorker(registration);
+    return Notification.requestPermission();
+  })
+  .then(permission => {
+    if (permission === 'granted') {
+      console.log('Notification permission granted.');
+      return messaging.getToken({ vapidKey: 'BGsQgK4lF9Qh0AUp4NS0Ky5tNlITALIG-k7CPndBfY9StRI54IxtRDNlKd1tNxbMiiYALQAM19-4NjqRdhTJR1w' });
+    } else {
+      console.log('Notification permission denied.');
+    }
+  })
+  .then(token => {
+    if (token) {
+      console.log('FCM Token:', token);
+      // Save token in Firebase DB under the user if needed
+    }
+  })
+  .catch(err => console.log('FCM Error:', err));
+
+  // Foreground notifications
+  messaging.onMessage(payload => {
+    console.log('Foreground message:', payload);
+    if (payload.notification) {
+      const notif = new Notification(payload.notification.title, {
+        body: payload.notification.body,
+        icon: 'icon.png'
+      });
+      notifSound.play().catch(e => console.log("Sound blocked:", e));
+    }
+  });
 
   // ---------------------------
   // Auto redirect if banned
@@ -103,10 +143,9 @@
   // ---------------------------
   // Display messages
   // ---------------------------
-  function displayMessage(messageData) {
-    const textValue = messageData.text;
-    const nameValue = messageData.name || "Anonymous";
-
+  function displayMessage(msg) {
+    const textValue = msg.text;
+    const nameValue = msg.name || "Anonymous";
     if (!textValue) return;
 
     const msgElement = document.createElement('div');
@@ -127,11 +166,8 @@
     chatContainer.scrollTop = chatContainer.scrollHeight;
   }
 
-  // Track last message timestamp to avoid duplicates
-  let lastTimestamp = 0;
-
   // ---------------------------
-  // Incoming messages listener
+  // Listen for new messages
   // ---------------------------
   dbRef.limitToLast(50).on('child_added', snapshot => {
     const msg = snapshot.val();
@@ -144,9 +180,8 @@
       if (Notification.permission === "granted") {
         const notif = new Notification(`New message from ${msg.name}`, {
           body: msg.text,
-          icon: "icon.jpeg" // optional
+          icon: "icon.png"
         });
-        // Play sound only if notification successfully created
         notifSound.play().catch(e => console.log("Sound blocked:", e));
       }
       lastTimestamp = msg.timestamp;
@@ -188,9 +223,7 @@
   }
 
   document.addEventListener('click', e => {
-    if (!e.target.classList.contains('name')) {
-      profilePopup.style.display = 'none';
-    }
+    if (!e.target.classList.contains('name')) profilePopup.style.display = 'none';
   });
 
   chatContainer.addEventListener('click', e => {
