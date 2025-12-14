@@ -42,8 +42,13 @@
   <!-- rules content -->
 </div>
 
+<!-- Audio for notifications -->
+<audio id="notif-sound" src="sounds/yippee!.mp3" preload="auto"></audio>
+
 <script>
-  // Firebase config
+  // ---------------------------
+  // Firebase and EmailJS
+  // ---------------------------
   const firebaseConfig = {
     apiKey: "AIzaSyApJyJrg_dLkBdA08heBNlfIZObSY9LqXk",
     authDomain: "fc-multi-source.firebaseapp.com",
@@ -66,24 +71,16 @@
   const reportBtn = document.getElementById('report-btn');
   const reportStatus = document.getElementById('report-status');
 
-  // Get username from login
   const username = localStorage.getItem('chatUsername');
   if (!username) window.location.href = "login.html";
 
+  const notifSound = document.getElementById("notif-sound");
+
   // ---------------------------
-  // Request Notification permission
+  // Notification Permission
   // ---------------------------
   if ("Notification" in window && Notification.permission !== "granted") {
     Notification.requestPermission();
-  }
-
-  function notifyMessage(sender, message) {
-    if (document.hidden && Notification.permission === "granted") {
-      new Notification(`New message from ${sender}`, {
-        body: message,
-        icon: "icon.png" // optional: your chat icon
-      });
-    }
   }
 
   // ---------------------------
@@ -106,43 +103,54 @@
   // ---------------------------
   // Display messages
   // ---------------------------
-  function displayMessages(messages) {
-    chatContainer.innerHTML = '';
-    const keys = Object.keys(messages).slice(-50);
-    keys.forEach(key => {
-      const messageData = messages[key];
-      const textValue = messageData.text;
-      const nameValue = messageData.name || "Anonymous";
+  function displayMessage(messageData) {
+    const textValue = messageData.text;
+    const nameValue = messageData.name || "Anonymous";
 
-      if (textValue) {
-        const msgElement = document.createElement('div');
-        msgElement.classList.add('chat-message');
+    if (!textValue) return;
 
-        const nameSpan = document.createElement('span');
-        nameSpan.classList.add('name');
-        nameSpan.textContent = nameValue + ": ";
-        nameSpan.addEventListener('click', () => showProfile(nameValue));
-        msgElement.appendChild(nameSpan);
+    const msgElement = document.createElement('div');
+    msgElement.classList.add('chat-message');
 
-        const textSpan = document.createElement('span');
-        textSpan.classList.add('text');
-        textSpan.textContent = textValue;
-        msgElement.appendChild(textSpan);
+    const nameSpan = document.createElement('span');
+    nameSpan.classList.add('name');
+    nameSpan.textContent = nameValue + ": ";
+    nameSpan.addEventListener('click', () => showProfile(nameValue));
+    msgElement.appendChild(nameSpan);
 
-        chatContainer.appendChild(msgElement);
+    const textSpan = document.createElement('span');
+    textSpan.classList.add('text');
+    textSpan.textContent = textValue;
+    msgElement.appendChild(textSpan);
 
-        // Notification for other users' messages
-        if (nameValue !== username) {
-          notifyMessage(nameValue, textValue);
-        }
-      }
-    });
+    chatContainer.appendChild(msgElement);
     chatContainer.scrollTop = chatContainer.scrollHeight;
   }
 
-  dbRef.limitToLast(50).on('value', snapshot => {
-    const data = snapshot.val();
-    if (data) displayMessages(data);
+  // Track last message timestamp to avoid duplicates
+  let lastTimestamp = 0;
+
+  // ---------------------------
+  // Incoming messages listener
+  // ---------------------------
+  dbRef.limitToLast(50).on('child_added', snapshot => {
+    const msg = snapshot.val();
+    if (!msg) return;
+
+    displayMessage(msg);
+
+    // Only notify for messages from other users
+    if (msg.name !== username && msg.timestamp > lastTimestamp) {
+      if (Notification.permission === "granted") {
+        const notif = new Notification(`New message from ${msg.name}`, {
+          body: msg.text,
+          icon: "icon.jpeg" // optional
+        });
+        // Play sound only if notification successfully created
+        notifSound.play().catch(e => console.log("Sound blocked:", e));
+      }
+      lastTimestamp = msg.timestamp;
+    }
   });
 
   // ---------------------------
