@@ -5,65 +5,256 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FC Multi-Source Chat</title>
   <link rel="stylesheet" href="style.css">
-</head>
-
-<body>
-
-  <!-- Navbar -->
-  <div id="navbar">
-    <button onclick="showChat()">Chat</button>
-    <button onclick="showRules()">Rules</button>
-    <button onclick="location.href='policies.html'">Terms and Policies</button>
-    <button onclick="location.href='call.html'">Call Chat</button>
-    <button onclick="location.href='announcements.html'">Announcements</button>
-  </div>
-
-  <!-- Chat page -->
-  <div id="chat-page">
-    <div id="chat-container"></div>
-
-    <div id="input-container">
-      <input type="text" id="message-input" placeholder="Type a message">
-      <button id="send-btn">Send</button>
-    </div>
-
-    <div id="report-section">
-      <h3>Report a message/user</h3>
-      <textarea id="report-text" placeholder="Describe your issue"></textarea>
-      <button id="report-btn">Submit Report</button>
-      <p id="report-status"></p>
-    </div>
-  </div>
-
-  <!-- Rules page -->
-  <div id="rules-page">
-    <!-- existing rules content -->
-  </div>
-
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-  <!-- EmailJS -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser/dist/email.min.js"></script>
-  <script>
-    emailjs.init("8ccRt_DLVUfYDESK7");
-  </script>
+</head>
+<body>
 
-  <!-- App -->
-  <script src="app.js"></script>
+<!-- Navbar -->
+<div id="navbar">
+  <button onclick="showChat()">Chat</button>
+  <button onclick="showRules()">Rules</button>
+  <button onclick="location.href='policies.html'">Terms and Policies</button>
+  <button onclick="location.href='call.html'">Call Chat</button>
+  <button onclick="location.href='announcements.html'">Announcements</button>
+</div>
 
-  <script>
-    // Page navigation
-    function showChat() {
-      document.getElementById("chat-page").style.display = "block";
-      document.getElementById("rules-page").style.display = "none";
+<!-- Chat page -->
+<div id="chat-page">
+  <div id="chat-container"></div>
+
+  <div id="input-container">
+    <input type="text" id="message-input" placeholder="Type a message">
+    <button id="send-btn">Send</button>
+  </div>
+
+  <div id="report-section">
+    <h3>Report a message/user</h3>
+    <textarea id="report-text" placeholder="Describe your issue"></textarea>
+    <button id="report-btn">Submit Report</button>
+    <p id="report-status"></p>
+  </div>
+</div>
+
+<!-- Rules page -->
+<div id="rules-page" style="display:none;">
+  <!-- rules content -->
+</div>
+
+<script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyApJyJrg_dLkBdA08heBNlfIZObSY9LqXk",
+    authDomain: "fc-multi-source.firebaseapp.com",
+    databaseURL: "https://fc-multi-source-default-rtdb.firebaseio.com",
+    projectId: "fc-multi-source",
+    storageBucket: "fc-multi-source.firebasestorage.app",
+    messagingSenderId: "602428529893",
+    appId: "1:602428529893:web:5da6267bead4539113080c"
+  };
+  firebase.initializeApp(firebaseConfig);
+  emailjs.init("8ccRt_DLVUfYDESK7");
+
+  const dbRef = firebase.database().ref('messages');
+  const usersRef = firebase.database().ref('users');
+
+  const chatContainer = document.getElementById('chat-container');
+  const messageInput = document.getElementById('message-input');
+  const sendBtn = document.getElementById('send-btn');
+  const reportText = document.getElementById('report-text');
+  const reportBtn = document.getElementById('report-btn');
+  const reportStatus = document.getElementById('report-status');
+
+  // Get username from login
+  const username = localStorage.getItem('chatUsername');
+  if (!username) window.location.href = "login.html";
+
+  // ---------------------------
+  // Request Notification permission
+  // ---------------------------
+  if ("Notification" in window && Notification.permission !== "granted") {
+    Notification.requestPermission();
+  }
+
+  function notifyMessage(sender, message) {
+    if (document.hidden && Notification.permission === "granted") {
+      new Notification(`New message from ${sender}`, {
+        body: message,
+        icon: "icon.png" // optional: your chat icon
+      });
     }
+  }
 
-    function showRules() {
-      window.location.href = "rules.html";
+  // ---------------------------
+  // Auto redirect if banned
+  // ---------------------------
+  function checkUserState() {
+    usersRef.orderByChild("user").equalTo(username).once("value").then(snapshot => {
+      const data = snapshot.val();
+      if (!data) return;
+      const userId = Object.keys(data)[0];
+      const user = data[userId];
+      if (user.state === "Terminated") {
+        window.location.href = "ban.html";
+      }
+    });
+  }
+  checkUserState();
+  setInterval(checkUserState, 500);
+
+  // ---------------------------
+  // Display messages
+  // ---------------------------
+  function displayMessages(messages) {
+    chatContainer.innerHTML = '';
+    const keys = Object.keys(messages).slice(-50);
+    keys.forEach(key => {
+      const messageData = messages[key];
+      const textValue = messageData.text;
+      const nameValue = messageData.name || "Anonymous";
+
+      if (textValue) {
+        const msgElement = document.createElement('div');
+        msgElement.classList.add('chat-message');
+
+        const nameSpan = document.createElement('span');
+        nameSpan.classList.add('name');
+        nameSpan.textContent = nameValue + ": ";
+        nameSpan.addEventListener('click', () => showProfile(nameValue));
+        msgElement.appendChild(nameSpan);
+
+        const textSpan = document.createElement('span');
+        textSpan.classList.add('text');
+        textSpan.textContent = textValue;
+        msgElement.appendChild(textSpan);
+
+        chatContainer.appendChild(msgElement);
+
+        // Notification for other users' messages
+        if (nameValue !== username) {
+          notifyMessage(nameValue, textValue);
+        }
+      }
+    });
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+
+  dbRef.limitToLast(50).on('value', snapshot => {
+    const data = snapshot.val();
+    if (data) displayMessages(data);
+  });
+
+  // ---------------------------
+  // Send chat message
+  // ---------------------------
+  sendBtn.addEventListener('click', () => {
+    const text = messageInput.value.trim();
+    if (!text) return;
+
+    dbRef.push().set({
+      name: username,
+      text: text,
+      timestamp: Date.now()
+    }).then(() => { messageInput.value = ''; });
+  });
+
+  messageInput.addEventListener('keypress', e => {
+    if (e.key === 'Enter') sendBtn.click();
+  });
+
+  // ---------------------------
+  // Profile popup
+  // ---------------------------
+  const profilePopup = document.createElement('div');
+  profilePopup.id = 'profile-popup';
+  document.body.appendChild(profilePopup);
+
+  function showProfile(name) {
+    usersRef.orderByChild("user").equalTo(name).once("value").then(snapshot => {
+      const data = snapshot.val();
+      const user = data ? data[Object.keys(data)[0]] : { role: "member" };
+      profilePopup.innerHTML = `<strong>${name}</strong><br>Role: ${user.role}`;
+      profilePopup.style.display = 'block';
+    });
+  }
+
+  document.addEventListener('click', e => {
+    if (!e.target.classList.contains('name')) {
+      profilePopup.style.display = 'none';
     }
-  </script>
+  });
+
+  chatContainer.addEventListener('click', e => {
+    if (e.target.classList.contains('name')) {
+      const rect = e.target.getBoundingClientRect();
+      profilePopup.style.top = rect.bottom + window.scrollY + 5 + 'px';
+      profilePopup.style.left = rect.left + window.scrollX + 'px';
+    }
+  });
+
+  // ---------------------------
+  // Send report via EmailJS
+  // ---------------------------
+  reportBtn.addEventListener('click', () => {
+    if (typeof emailjs === "undefined") {
+      reportStatus.textContent = "Email service not loaded!";
+      reportStatus.style.color = "red";
+      return;
+    }
+    const reportContent = reportText.value.trim();
+    if (!reportContent) {
+      reportStatus.textContent = "Please write something.";
+      reportStatus.style.color = "orange";
+      return;
+    }
+    reportStatus.textContent = "Sending…";
+    reportStatus.style.color = "blue";
+
+    let timeoutReached = false;
+    const timer = setTimeout(() => {
+      timeoutReached = true;
+      reportStatus.textContent = "Duration Time ended ❌";
+      reportStatus.style.color = "red";
+    }, 10000);
+
+    emailjs.send("service_tusp0cx", "template_ghapews", {
+      to_name: "Owner Name",
+      from_name: username,
+      message: reportContent,
+      subject: `FC Multi-Source Report from ${username}`
+    })
+    .then(() => {
+      if (!timeoutReached) {
+        clearTimeout(timer);
+        reportStatus.textContent = "Sent ✅";
+        reportStatus.style.color = "green";
+        reportText.value = '';
+      }
+    })
+    .catch(err => {
+      if (!timeoutReached) {
+        clearTimeout(timer);
+        reportStatus.textContent = "Error ❌";
+        reportStatus.style.color = "red";
+        console.error("Report failed:", err);
+      }
+    });
+  });
+
+  // ---------------------------
+  // Page switching
+  // ---------------------------
+  function showChat() {
+    document.getElementById("chat-page").style.display = "flex";
+    document.getElementById("rules-page").style.display = "none";
+  }
+
+  function showRules() {
+    document.getElementById("chat-page").style.display = "none";
+    document.getElementById("rules-page").style.display = "block";
+  }
+</script>
 
 </body>
 </html>
