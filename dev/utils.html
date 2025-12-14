@@ -14,7 +14,6 @@
       border-radius: 2px;
     }
 
-    /* Scrollable list style */
     .scrollable-list {
       max-height: 400px;
       overflow-y: auto;
@@ -63,7 +62,6 @@
       background-color: #357ABD;
     }
 
-    /* Users table */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -101,7 +99,6 @@
       background-color: #357ABD;
     }
 
-    /* FC Guard Controller */
     #fc-guard-controller {
       margin-top: 20px;
     }
@@ -137,14 +134,12 @@
     #send-fc-guard-msg:hover {
       background-color: #357ABD;
     }
-
   </style>
 </head>
 <body>
 
 <h1>Dev Utilities</h1>
 
-<!-- Firebase Users View -->
 <section id="firebase-view">
   <h2>Firebase Users View</h2>
   <div class="buttons-row">
@@ -166,7 +161,6 @@
   </table>
 </section>
 
-<!-- FC Guard Controller -->
 <section id="fc-guard-controller">
   <h2>FC Guard Controller</h2>
   <div class="fc-guard-input">
@@ -178,7 +172,6 @@
   <div id="fc-guard-announcements" class="scrollable-list"></div>
 </section>
 
-<!-- Firebase Contents View -->
 <section id="firebase-contents-view">
   <h2>Firebase Database Contents</h2>
   <div class="search-controls">
@@ -207,9 +200,9 @@ const usersRef = ref(db, "users");
 const announcementsRef = ref(db, "announcements");
 const contentsDiv = document.getElementById("firebase-contents");
 
-// ---------------- Users Table ----------------
 const usersTableBody = document.querySelector("#users-table tbody");
 
+// ---------------- Users Table ----------------
 function refreshUsers() {
   onValue(usersRef, snapshot => {
     const users = snapshot.val() || {};
@@ -237,15 +230,29 @@ document.getElementById("add-user-btn").addEventListener("click", () => {
   set(newUserRef, { user: username, pin: pin, state: "Open" });
 });
 
-// Ban User
+// ---------------- Ban User with Reason ----------------
 document.getElementById("ban-user-btn").addEventListener("click", async () => {
   const snapshot = await get(usersRef);
   const users = snapshot.val() || {};
   const usernames = Object.values(users).map(u => u.user).filter(u => u !== "FC Guard");
   const selected = prompt("Enter username to ban:\n" + usernames.join(", "));
   if (!selected || selected === "FC Guard") return;
+
   const uid = Object.keys(users).find(k => users[k].user === selected);
-  update(ref(db, `users/${uid}`), { state: "Terminated" });
+
+  const reason = prompt(`Enter reason for banning ${selected}:`) || "No reason provided";
+  const fromTime = new Date().toISOString();
+  const toTimeInput = prompt("Enter ban end date & time (YYYY-MM-DD HH:MM), leave blank for indefinite:");
+  const toTime = toTimeInput ? new Date(toTimeInput).toISOString() : null;
+
+  update(ref(db, `users/${uid}`), {
+    state: "Terminated",
+    banReason: reason,
+    banFrom: fromTime,
+    banTo: toTime
+  });
+
+  alert(`${selected} has been banned.\nReason: ${reason}\nFrom: ${fromTime}${toTime ? "\nTo: " + toTime : "\nTo: Indefinite"}`);
 });
 
 // Unban User
@@ -256,7 +263,7 @@ document.getElementById("unban-user-btn").addEventListener("click", async () => 
   const selected = prompt("Enter username to unban:\n" + bannedUsers.join(", "));
   if (!selected) return;
   const uid = Object.keys(users).find(k => users[k].user === selected);
-  update(ref(db, `users/${uid}`), { state: "Open" });
+  update(ref(db, `users/${uid}`), { state: "Open", banReason: null, banFrom: null, banTo: null });
 });
 
 // Remove User
@@ -299,7 +306,7 @@ onValue(announcementsRef, snapshot => {
   });
 });
 
-// ---------------- Firebase Contents View ----------------
+// ---------------- Firebase Contents ----------------
 let dbData = {};
 
 function highlightText(text, search) {
