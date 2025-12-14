@@ -18,33 +18,33 @@
 </div>
 
 <script>
-  const loginBtn = document.getElementById('login-btn');
+const loginBtn = document.getElementById('login-btn');
 
-  loginBtn.addEventListener('click', () => {
-    const username = document.getElementById('username').value.trim();
-    const pin = document.getElementById('pin').value.trim();
+loginBtn.addEventListener('click', () => {
+  const username = document.getElementById('username').value.trim();
+  const pin = document.getElementById('pin').value.trim();
 
-    if (!username || !pin) {
-      alert("Please enter both username and PIN!");
-      return;
-    }
+  if (!username || !pin) {
+    alert("Please enter both username and PIN!");
+    return;
+  }
 
-    fetch('users.json')
-      .then(res => res.json())
-      .then(users => {
-        const user = users.find(u => u.user === username && u.pin === pin);
-        if (user) {
-          localStorage.setItem('chatUsername', username);
-          window.location.href = "index.html";
-        } else {
-          alert("Invalid username or PIN!");
-        }
-      })
-      .catch(err => {
-        console.error("Error loading users.json:", err);
-        alert("Failed to load users data.");
-      });
-  });
+  fetch('users.json')
+    .then(res => res.json())
+    .then(users => {
+      const user = users.find(u => u.user === username && u.pin === pin);
+      if (user) {
+        localStorage.setItem('chatUsername', username);
+        window.location.href = "index.html";
+      } else {
+        alert("Invalid username or PIN!");
+      }
+    })
+    .catch(err => {
+      console.error("Error loading users.json:", err);
+      alert("Failed to load users data.");
+    });
+});
 </script>
 
 </body>
