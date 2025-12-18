@@ -19,6 +19,7 @@
   <button onclick="location.href='policies.html'">Terms and Policies</button>
   <button onclick="location.href='call.html'">Call Chat</button>
   <button onclick="location.href='announcements.html'">Announcements</button>
+  <button onclick="location.href='minigames.html'" disabled>Minigames (BETA)</button>
 </div>
 
 <!-- Chat page -->
@@ -46,6 +47,7 @@
 <!-- Audio for notifications -->
 <audio id="notif-sound" src="sounds/yippee!.mp3" preload="auto"></audio>
 
+<script src="moderation.js"></script>
 <script>
   // ---------------------------
   // Firebase config
@@ -138,7 +140,23 @@
     });
   }
   checkUserState();
-  setInterval(checkUserState, 500);
+
+  // auto redirect if chat is shutdown
+  const chatStateRef = firebase.database().ref('chat/state');
+
+  function checkChatState() {
+    chatStateRef.once("value").then(snapshot => {
+      const state = snapshot.val();
+      if (state === "shutdown") {
+        window.location.href = "shutdown.html";
+      }
+    });
+  }
+
+  setInterval(() => {
+    checkUserState();
+    checkChatState();
+  }, 500);
 
   // ---------------------------
   // Display messages

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat Shutdown - FC Multi-Source</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+  /* Jump animation for the chicken image */
+  @keyframes jump {
+    0%, 100% { transform: translateY(0); }
+    25% { transform: translateY(-20px); }
+    50% { transform: translateY(0); }
+    75% { transform: translateY(-10px); }
+  }
+
+  #chicken-img {
+    animation: jump 1s infinite;
+  }
+</style>
+</head>
+<body>
+
+<div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; text-align:center; padding:20px;">
+  <!-- Chicken image with jump animation -->
+  <img id="chicken-img" src="chicken.png" alt="Chicken" style="max-width:200px; margin-bottom:20px;">
+  
+  <h1>Sorry, We're experiencing technical difficulities.</h1>
+  <p>Developer is trying to fix it ASAP. Servers might be down.</p>
+</div>
+
+<script>
+  // ---------------------------
+  // Firebase config
+  // ---------------------------
+  const firebaseConfig = {
+    apiKey: "AIzaSyApJyJrg_dLkBdA08heBNlfIZObSY9LqXk",
+    authDomain: "fc-multi-source.firebaseapp.com",
+    databaseURL: "https://fc-multi-source-default-rtdb.firebaseio.com",
+    projectId: "fc-multi-source",
+    storageBucket: "fc-multi-source.firebasestorage.app",
+    messagingSenderId: "602428529893",
+    appId: "1:602428529893:web:5da6267bead4539113080c"
+  };
+  firebase.initializeApp(firebaseConfig);
+
+  const chatStateRef = firebase.database().ref('chat/state');
+
+  function checkChatState() {
+    chatStateRef.once("value").then(snapshot => {
+      const state = snapshot.val();
+      if (state === "online" || state === "Open") {
+        window.location.href = "index.html";
+      }
+    });
+  }
+
+  setInterval(checkChatState, 500);
+</script>
+
+</body>
+</html>
