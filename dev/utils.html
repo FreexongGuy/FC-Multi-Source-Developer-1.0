@@ -134,6 +134,21 @@
     #send-fc-guard-msg:hover {
       background-color: #357ABD;
     }
+
+    /* Shutdown / Reopen buttons */
+    .shutdown-btn {
+      cursor: pointer;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+
+    .shutdown-btn:hover {
+      opacity: 0.85;
+    }
   </style>
 </head>
 <body>
@@ -178,6 +193,24 @@
     <input type="text" id="contents-search" placeholder="Search database...">
   </div>
   <div id="firebase-contents" class="scrollable-list"></div>
+</section>
+
+<!-- Chat Control Section -->
+<section id="chat-control">
+  <h2>Chat Control</h2>
+  <div class="buttons-row">
+    <button id="shutdown-chat-btn" class="shutdown-btn" style="background-color:#d32f2f;">
+      Shutdown Chat
+    </button>
+    <button id="reopen-chat-btn" class="shutdown-btn" style="background-color:#388e3c;">
+      Reopen Chat
+    </button>
+  </div>
+</section>
+
+<section id="chat-messages-control">
+  <h2>Chat Messages Control</h2>
+  <div id="messages-list" class="scrollable-list"></div>
 </section>
 
 <script type="module">
@@ -230,7 +263,7 @@ document.getElementById("add-user-btn").addEventListener("click", () => {
   set(newUserRef, { user: username, pin: pin, state: "Open" });
 });
 
-// ---------------- Ban User with Reason ----------------
+// ---------------- Ban User ----------------
 document.getElementById("ban-user-btn").addEventListener("click", async () => {
   const snapshot = await get(usersRef);
   const users = snapshot.val() || {};
@@ -354,6 +387,32 @@ onValue(ref(db), snapshot => {
 document.getElementById("contents-search").addEventListener("input", e => {
   renderContents(e.target.value);
 });
+
+// ------------------- Chat Control -------------------
+const chatStateRef = ref(db, "chat/state");
+
+// Shutdown chat
+document.getElementById("shutdown-chat-btn").addEventListener("click", async () => {
+  if (!confirm("Are you sure you want to SHUTDOWN the chat?")) return;
+  await set(chatStateRef, "shutdown");
+  alert("Chat state set to SHUTDOWN");
+});
+
+// Reopen chat
+document.getElementById("reopen-chat-btn").addEventListener("click", async () => {
+  if (!confirm("Are you sure you want to REOPEN the chat?")) return;
+  await set(chatStateRef, "online");
+  alert("Chat state set to ONLINE");
+});
+
+// Optional: log current chat state
+onValue(chatStateRef, snapshot => {
+  const state = snapshot.val();
+  console.log("Current chat state:", state);
+});
+
+
 </script>
+
 </body>
 </html>
